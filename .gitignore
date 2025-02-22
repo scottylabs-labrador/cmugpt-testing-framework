@@ -1,1 +1,7 @@
 .env
+
+# Ignore credentials
+credentials.json
+
+# Ignore token.json
+token.json
