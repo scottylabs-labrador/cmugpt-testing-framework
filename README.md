@@ -60,3 +60,7 @@ In cmugpt_assistant.py there are three tasks.
   
       def get_functions_called(self):
           return self.functions_called
+
+        1. **Add elif statements to check if function_name == 'add_your_function_name'**
+
+        2. Def a new helper function that calls your function if following with previous format/approach
