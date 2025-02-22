@@ -194,7 +194,8 @@ class CMUGPTAssistant:
                 return f"I apologize, but an unexpected error occurred. Please try again. (Error: {str(e)})"
 
         return "I apologize, but I was unable to process your request after multiple attempts. Please try again later."
-
+    def testers():
+        return True
     # Function to execute the functions
     def execute_function(self, function_name, arguments):
         if function_name == 'general_purpose_knowledge_search':
@@ -206,9 +207,9 @@ class CMUGPTAssistant:
             return {"error": "Function not found."}
 
     # Define the functions (simulate the functionality)
-    def general_purpose_knowledge_search(self, search_query):
-        # Use Perplexity API for general knowledge searches
-        return 0
+    # def general_purpose_knowledge_search(self, search_query):
+    #     # Use Perplexity API for general knowledge searches
+    #     return 0
         # return self.perplexity_search.search(search_query)
 
     # custom function for creating calendar
@@ -252,6 +253,7 @@ class CMUGPTAssistant:
 
         except HttpError as error:
             print(f"An error occurred: {error}")
+        return "Your event was added successfully! Let me know if you need anything else"
     
     def get_functions_called(self):
         return self.functions_called
