@@ -15,3 +15,48 @@ pip install -r requirements.txt
 streamlit run app.py
 
 
+**How To Add Your Function to the Framework**
+
+In cmugpt_assistant.py there are three tasks.
+
+1. Import your function
+2. Add your function description to the def get_tools(self): function.
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "general_purpose_knowledge_search",
+                    "description": "Search for general knowledge about Carnegie Mellon University.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "search_query": {
+                                "type": "string",
+                                "description": "The query to search for general knowledge."
+                            }
+                        },
+                        "required": ["search_query"],
+                        "additionalProperties": False
+                    },
+                    "strict": True  # Enabling Structured Outputs
+                }
+            },
+        ]
+        return tools
+
+  3. Make your function executable by our system
+   # Function to execute the functions
+      def execute_function(self, function_name, arguments):
+          if function_name == 'general_purpose_knowledge_search':
+              return self.general_purpose_knowledge_search(arguments.get('search_query'))
+          #Add elif statements here
+          else:
+              return {"error": "Function not found."}
+  
+      # Define the functions (simulate the functionality)
+      def general_purpose_knowledge_search(self, search_query):
+          # Use Perplexity API for general knowledge searches
+          return self.perplexity_search.search(search_query)
+  
+      def get_functions_called(self):
+          return self.functions_called
