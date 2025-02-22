@@ -5,9 +5,42 @@ import os
 import time
 from perplexity_integration import CMUPerplexitySearch  # Changed from relative import
 import requests
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
+import datetime
+import os.path
+from datetime import datetime
+from tzlocal import get_localzone  # Auto-detect user's timezone
+from zoneinfo import ZoneInfo
 
-#from courses import get_courses, get_course_by_id, get_fces, get_fces_by_id, get_schedules
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
+# This scope allows for some modification to the calendar, as opposed to /calendar/readonly
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
+
+def authenticate_google_calendar():
+    """Authenticate and return the Google Calendar API service."""
+    credentials_location = "credentials.json"
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                credentials_location, SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+
+    service = build('calendar', 'v3', credentials=creds)
+    return service
 
 load_dotenv()
 
@@ -38,7 +71,7 @@ class CMUGPTAssistant:
         # Keep track of functions called
         self.functions_called = []
         
-        self.perplexity_search = CMUPerplexitySearch()
+        # self.perplexity_search = CMUPerplexitySearch()
     
     def get_tools(self):
         tools = [
@@ -60,7 +93,25 @@ class CMUGPTAssistant:
                     },
                     "strict": True  # Enabling Structured Outputs
                 }
-            },
+            }, {
+                "type": "function",
+                "function": {
+                    "name": "create_calendar_event",
+                    "description": "Make an event in the user's calendar when prompted",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "summary": {
+                                "type": "string",
+                                "description": "The name of the event to be created with default settings"
+                            }
+                        },
+                        "required": ["name"],
+                        "additionalProperties": False
+                    },
+                    "strict": False  # Enabling Structured Outputs
+                }
+            }
         ]
         return tools
 
@@ -149,14 +200,59 @@ class CMUGPTAssistant:
         if function_name == 'general_purpose_knowledge_search':
             return self.general_purpose_knowledge_search(arguments.get('search_query'))
         #Add elif statements here
+        elif function_name == 'create_calendar_event':
+            return self.create_calendar_event(arguments.get('summary'))
         else:
             return {"error": "Function not found."}
 
     # Define the functions (simulate the functionality)
     def general_purpose_knowledge_search(self, search_query):
         # Use Perplexity API for general knowledge searches
-        return self.perplexity_search.search(search_query)
+        return 0
+        # return self.perplexity_search.search(search_query)
 
+    # custom function for creating calendar
+    def create_calendar_event(self, summary):
+        location = "Tepper"
+        description = "Eating icecream"
+
+        start_date = "03/10/2025"
+        end_date = "03/10/2025"
+        start_time = "09:30"
+        end_time = "10:35"
+
+        start_object = datetime.strptime(f"{start_date} {start_time}", "%m/%d/%Y %H:%M")
+        end_object = datetime.strptime(f"{end_date} {end_time}", "%m/%d/%Y %H:%M")
+        user_timezone = get_localzone()
+        # Localize datetime to user's timezone
+        start_object = start_object.replace(tzinfo=user_timezone)
+        end_object = end_object.replace(tzinfo=user_timezone)
+
+        # Convert to ISO 8601 format
+        start_iso = start_object.isoformat()
+        end_iso = end_object.isoformat()
+
+        event = {
+        'summary': summary,
+        'location': location,
+        'description': description,
+        'start': {
+            'dateTime': start_iso,
+        },
+        'end': {
+            'dateTime': end_iso,
+        },
+        }
+        service = authenticate_google_calendar()
+
+        try:
+            # insert the event 
+            event = service.events().insert(calendarId="primary", body=event).execute()
+            print(f"Event added successfully!")
+
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+    
     def get_functions_called(self):
         return self.functions_called
              
